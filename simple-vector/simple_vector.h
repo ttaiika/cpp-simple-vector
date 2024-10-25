@@ -7,7 +7,6 @@
 #include <cassert>
 #include <initializer_list>
 #include <stdexcept>
-#include <utility>
 
 class ReserveProxy
 {
@@ -79,26 +78,28 @@ public:
 
     Type& operator[](size_t index) noexcept
     {
+        assert(static_cast<int> (index) >= 0 && index < size_);
         return arr_[index];
     }
 
     const Type& operator[](size_t index) const noexcept
     {
+        assert(static_cast<int> (index) >= 0 && index < size_);
         return arr_[index];
     }
 
     Type& At(size_t index)
     {
-        if (index >= capacity_)
+        if (index >= size_)
         {
-            throw std::out_of_range("");
+            throw std::out_of_range("The index is out of range");
         }
         return arr_[index];
     }
 
     const Type& At(size_t index) const
     {
-        if (index >= capacity_)
+        if (index >= size_)
         {
             throw std::out_of_range("The index is out of range");
         }
@@ -209,10 +210,8 @@ public:
 
     Iterator Insert(ConstIterator pos, Type&& value)
     {
-        if (pos < begin() || pos > end())
-        {
-            throw std::out_of_range("The position is out of range");
-        }
+        assert(pos >= begin() && pos <= end());
+
         Iterator it = const_cast<Iterator>(pos);
         if (size_ != capacity_)
         {
@@ -243,22 +242,17 @@ public:
 
     void PopBack() noexcept
     {
+        assert(size_ != 0);
         arr_[size_] = 0;
         --size_;
     }
 
     Iterator Erase(ConstIterator pos)
     {
-        if (pos < begin() || pos > end())
-        {
-            throw std::out_of_range("The position is out of range");
-        }
+        assert(pos >= begin() && pos <= end());
+
         Iterator it = const_cast<Iterator>(pos);
         std::move(it + 1, end(), it);
-        if (size_ == 0)
-        {
-            throw std::invalid_argument("size = 0");
-        }
         --size_;
         return it;
     }
@@ -292,7 +286,7 @@ private:
 template <typename Type>
 inline bool operator==(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs)
 {
-    return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+    return (lhs.GetSize() == rhs.GetSize()) && std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
 }
 
 template <typename Type>

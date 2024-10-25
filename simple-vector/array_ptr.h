@@ -1,6 +1,7 @@
 #pragma once
 #include <cassert>
 #include <cstdlib>
+#include <utility>
 
 template <typename Type>
 class ArrayPtr
@@ -9,21 +10,13 @@ public:
     ArrayPtr() = default;
 
     explicit ArrayPtr(size_t size)
+        : raw_ptr_(size == 0 ? nullptr : new Type[size])
     {
-        if (size == 0)
-        {
-            raw_ptr_ = nullptr;
-        }
-        else
-        {
-            Type* numbers = new Type[size];
-            raw_ptr_ = numbers;
-        }
     }
 
     explicit ArrayPtr(Type* raw_ptr) noexcept
+        : raw_ptr_(raw_ptr)
     {
-        raw_ptr_ = raw_ptr;
     }
 
     ArrayPtr(const ArrayPtr&) = delete;
@@ -37,15 +30,13 @@ public:
 
     ArrayPtr& operator=(ArrayPtr&& rhs)
     {
-        ArrayPtr(std::move(rhs.Get()));
+        // Перемещение владения указателем
+        std::swap(raw_ptr_, rhs.raw_ptr_);
         return *this;
     }
 
-    [[nodiscard]] Type* Release() noexcept
-    {
-        Type* copy = raw_ptr_;
-        raw_ptr_ = nullptr;
-        return copy;
+    [[nodiscard]] Type* Release() noexcept {
+        return std::exchange(raw_ptr_, nullptr);
     }
 
     Type& operator[](size_t index) noexcept
@@ -69,11 +60,8 @@ public:
         return raw_ptr_;
     }
 
-    void swap(ArrayPtr& other) noexcept
-    {
-        Type* copy = raw_ptr_;
-        raw_ptr_ = other.raw_ptr_;
-        other.raw_ptr_ = copy;
+    void swap(ArrayPtr& other) noexcept {
+        std::swap(raw_ptr_, other.raw_ptr_);
     }
 
 private:
